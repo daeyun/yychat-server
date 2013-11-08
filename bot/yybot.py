@@ -25,6 +25,8 @@ class YYBot(irc.IRCClient):
 
     def privmsg(self, user, channel, msg):
         """This will get called when the bot receives a message."""
+        log.msg(">> <%s> %s %s" % (user, channel, msg))
+
         user = user.split('!', 1)[0]
         log.msg("<%s> %s" % (user, msg))
 
