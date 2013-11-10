@@ -30,17 +30,19 @@ class YYBot(irc.IRCClient):
         user = user.split('!', 1)[0]
         log.msg("<%s> %s" % (user, msg))
 
+        self.factory.request_handler.get_message(user, channel, msg)
+
         # Check to see if they're sending me a private message
-        if channel == self.nickname:
-            msg = "Received a privte message"
-            self.msg(user, msg)
-            return
+        #if channel == self.nickname:
+            #msg = "Received a privte message"
+            #self.msg(user, msg)
+            #return
 
         # Otherwise check to see if it is a message directed at me
-        if msg.startswith(self.nickname):
-            msg = "%s: =^_^=" % user
-            self.msg(channel, msg)
-            log.msg("<%s> %s" % (self.nickname, msg))
+        #if msg.startswith(self.nickname):
+            #msg = "%s: =^_^=" % user
+            #self.msg(channel, msg)
+            #log.msg("<%s> %s" % (self.nickname, msg))
 
     def action(self, user, channel, msg):
         """This will get called when the bot sees someone do an action."""
@@ -69,11 +71,14 @@ class YYBotFactory(protocol.ClientFactory):
         self.channel = channel
         self.nickname = nickname
 
+    def add_request_handler(self, request_handler):
+        self.request_handler = request_handler
+
     def buildProtocol(self, addr):
-        p = YYBot()
-        p.factory = self
-        p.nickname = self.nickname
-        return p
+        self.protocol = YYBot()
+        self.protocol.factory = self
+        self.protocol.nickname = self.nickname
+        return self.protocol
 
     def clientConnectionLost(self, connector, reason):
         """If we get disconnected, reconnect to server."""
@@ -82,3 +87,6 @@ class YYBotFactory(protocol.ClientFactory):
     def clientConnectionFailed(self, connector, reason):
         """Connection Failed."""
         reactor.stop()
+
+    def send_message(self, target, message):
+        self.protocol.msg(target, message)

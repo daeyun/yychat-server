@@ -1,18 +1,28 @@
-from twisted.internet import reactor
 from twisted.python import log
 
 import sys
 from bot.yybot import YYBotFactory
+from server.request_handler import RequestHandlerFactory
 
 if __name__ == '__main__':
+    try:
+        # not available on Mac OS
+        from twisted.internet import pollreactor
+        pollreactor.install()
+    except:
+        pass
+
+    from twisted.internet import reactor
+
     # initialize logging
     log.startLogging(sys.stdout)
 
-    # create factory protocol and application
-    f = YYBotFactory("#yychat", "yychat")
+    request_handler = RequestHandlerFactory()
+    irc_bot = YYBotFactory("#yychat", "yychat")
+    request_handler.add_irc_bot(irc_bot)
+    irc_bot.add_request_handler(request_handler)
 
-    # connect factory to this host and port
-    reactor.connectTCP("irc.freenode.net", 6667, f)
+    reactor.connectTCP("irc.freenode.net", 6667, irc_bot)
+    reactor.listenTCP(10100, request_handler)
 
-    # run bot
     reactor.run()
