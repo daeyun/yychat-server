@@ -1,11 +1,15 @@
 from twisted.words.protocols import irc
 from twisted.internet import reactor, protocol
 from twisted.python import log
+from twisted.internet import defer
 
 import time
 
 
 class YYBot(irc.IRCClient):
+    def __init__(self):
+        self._namescallback = {}
+
     def connectionMade(self):
         irc.IRCClient.connectionMade(self)
         log.msg("[connected at %s]" % time.asctime(time.localtime(time.time())))
@@ -23,14 +27,16 @@ class YYBot(irc.IRCClient):
         """This will get called when the bot joins the channel."""
         log.msg("[joined %s]" % channel)
 
-    def privmsg(self, user, channel, msg):
+        def got_names(nicklist):
+            self.names("channel").addCallback()
+
+    def privmsg(self, hostmask, channel, msg):
         """This will get called when the bot receives a message."""
-        log.msg(">> <%s> %s %s" % (user, channel, msg))
+        sender_nick = hostmask.split('!', 1)[0]
+        userhost = hostmask.split('!', 1)[1]
+        log.msg("<%s> %s" % (hostmask, msg))
 
-        user = user.split('!', 1)[0]
-        log.msg("<%s> %s" % (user, msg))
-
-        self.factory.request_handler.get_message(user, channel, msg)
+        self.factory.request_handler.get_message(sender_nick, userhost, channel, msg)
 
         # Check to see if they're sending me a private message
         #if channel == self.nickname:
@@ -55,12 +61,53 @@ class YYBot(irc.IRCClient):
         new_nick = params[0]
         log.msg("%s is now known as %s" % (old_nick, new_nick))
 
-    # Override the method that determines how a nickname is changed on
-    # collisions. The default method appends an underscore.
+    def irc_MODE(self, hostmask, params):
+        """Parse the server message when one or more modes are changed."""
+        sender_nick = hostmask.split('!', 1)[0]
+        channel = params[0]
+        mode = params[1]  # "+v", for example
+
+        if (len(params) == 3):
+            nick = params[2]
+            self.factory.request_handler.\
+                notify_user_mode_change(sender_nick, channel, mode, nick)
+
     def alterCollidedNick(self, nickname):
-        """ Generate an altered version of a nickname that caused a collision in an
-        effort to create an unused related name for subsequent registration. """
+        """ Determine how a nickname is changed on collisions. The default
+        method appends an underscore. """
         return nickname + '^'
+
+    def names(self, channel):
+        channel = channel.lower()
+        d = defer.Deferred()
+        if channel not in self._namescallback:
+            self._namescallback[channel] = ([], [])
+
+        self._namescallback[channel][0].append(d)
+        self.sendLine("NAMES %s" % channel)
+        return d
+
+    def irc_RPL_NAMREPLY(self, prefix, params):
+        channel = params[2].lower()
+        nicklist = params[3].split(' ')
+
+        if channel not in self._namescallback:
+            return
+
+        n = self._namescallback[channel][1]
+        n += nicklist
+
+    def irc_RPL_ENDOFNAMES(self, prefix, params):
+        channel = params[1].lower()
+        if channel not in self._namescallback:
+            return
+
+        callbacks, namelist = self._namescallback[channel]
+
+        for cb in callbacks:
+            cb.callback(namelist)
+
+        del self._namescallback[channel]
 
 
 class YYBotFactory(protocol.ClientFactory):
