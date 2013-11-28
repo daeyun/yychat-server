@@ -10,17 +10,17 @@ class RequestHandler(LineReceiver):
         self.delimiter = "\n"
 
     def connectionMade(self):
-        log.msg("Client joined!")
         self.name = random.random()
+        log.msg("Client %s joined!" % self.name)
         self.users[self.name] = self
 
     def connectionLost(self, reason):
-        log.msg("Client left!")
+        log.msg("Client %s left!" % self.name)
         if self.name in self.users:
             del self.users[self.name]
 
     def lineReceived(self, line):
-        log.msg("Client sent data: ", line)
+        log.msg("Client %s sent data: " % self.name, line)
         self.factory.irc_bot.send_message("#yychat", line)
 
     #def handle_CHAT(self, message):
