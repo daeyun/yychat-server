@@ -1,6 +1,7 @@
 from twisted.internet.protocol import Factory
 from twisted.protocols.basic import LineReceiver
 from twisted.python import log
+from hashlib import md5
 import random
 import json
 
@@ -27,17 +28,29 @@ class RequestHandler(LineReceiver):
         request_type = request['type'].lower()
 
         {
-            'privmsg': self.handle_message,
+            'send_message': self.handle_send_message,
             'list_channels': self.handle_list_channels
-        }[request_type](request)
+        }[request_type](request, md5(line).hexdigest())
 
-    def handle_message(self, request):
+    def handle_send_message(self, request, hash):
+        """Send a message to the IRC server and send a confirmation message
+        to the client containing the hash of the request string."""
         target = request['target']
         message = request['message']
-        self.factory.irc_bot.send_message(target, message)
+        self.factory.irc_bot.send_send_message(target, message)
 
-    def handle_list_channels(self, request):
-        self.sendLine(json.dumps(self.factory.irc_bot.channels))
+        response = {
+            "hash": hash,
+        }
+        self.sendLine(json.dumps(response))
+
+    def handle_list_channels(self, request, hash):
+        """Respond with the list of currently joined channels."""
+        response = {
+            "content": self.factory.irc_bot.channels,
+            "hash": hash,
+        }
+        self.sendLine(json.dumps(response))
 
     #def handle_CHAT(self, message):
         #message = "<%s> %s" % (self.name, message)

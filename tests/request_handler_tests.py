@@ -1,6 +1,6 @@
 from twisted.test import proto_helpers
 from twisted.trial import unittest
-
+from hashlib import md5
 import json
 import os
 import sys
@@ -35,13 +35,16 @@ class TestRequestHandler(unittest.TestCase):
         self.fake_receiver_transport.clear()
 
     def test_list_channels(self):
-        """ Client requests a list of channels. """
-
         request = {
-            "type": "list_channels"
+            "type": "list_channels",
         }
         request_str = json.dumps(request)
         self.request_handler.lineReceived(request_str)
 
-        expected = json.dumps(self._channels) + '\n'  # ["#test_channel"]\n
+        response = {
+            "content": self._channels,
+            "hash": md5(request_str).hexdigest(),
+        }
+
+        expected = json.dumps(response) + '\n'  # ["#test_channel"]\n
         self.assertEqual(expected, self.fake_receiver_transport.value())
