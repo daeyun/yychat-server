@@ -35,9 +35,10 @@ class RequestHandler(LineReceiver):
     def handle_send_message(self, request, hash):
         """Send a message to the IRC server and send a confirmation message
         to the client containing the hash of the request string."""
-        target = request['target']
-        message = request['message']
-        self.factory.irc_bot.send_send_message(target, message)
+        target = request['target'].encode('ascii', 'ignore')
+        message = request['message'].encode('ascii', 'ignore')
+
+        self.factory.irc_bot.send_message(target, message)
 
         response = {
             "hash": hash,

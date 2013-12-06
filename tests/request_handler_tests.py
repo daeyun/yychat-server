@@ -45,6 +45,25 @@ class TestRequestHandler(unittest.TestCase):
             "content": self._channels,
             "hash": md5(request_str).hexdigest(),
         }
-
-        expected = json.dumps(response) + '\n'  # ["#test_channel"]\n
+        expected = json.dumps(response) + '\n'
         self.assertEqual(expected, self.fake_receiver_transport.value())
+
+    def test_send_message(self):
+        request = {
+            "type": "send_message",
+            "message": "supgaiz",
+            "target": self._channels[0],
+        }
+        request_str = json.dumps(request)
+        self.request_handler.lineReceived(request_str)
+
+        response = {
+            "hash": md5(request_str).hexdigest(),
+        }
+        expected = json.dumps(response)
+        actual = self.fake_receiver_transport.value().strip()
+        self.assertEqual(expected, actual)
+
+        expected = "PRIVMSG #test_channel :supgaiz"
+        actual = self.fake_bot_transport.value().strip()
+        self.assertEqual(expected, actual)
