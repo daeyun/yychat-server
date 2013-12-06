@@ -2,6 +2,7 @@ from twisted.internet.protocol import Factory
 from twisted.protocols.basic import LineReceiver
 from twisted.python import log
 import random
+import json
 
 
 class RequestHandler(LineReceiver):
@@ -21,7 +22,22 @@ class RequestHandler(LineReceiver):
 
     def lineReceived(self, line):
         log.msg("Client %s sent data: " % self.name, line)
-        self.factory.irc_bot.send_message("#yychat", line)
+
+        request = json.loads(line.strip())
+        request_type = request['type'].lower()
+
+        {
+            'privmsg': self.handle_message,
+            'list_channels': self.handle_list_channels
+        }[request_type](request)
+
+    def handle_message(self, request):
+        target = request['target']
+        message = request['message']
+        self.factory.irc_bot.send_message(target, message)
+
+    def handle_list_channels(self, request):
+        self.sendLine(json.dumps(self.factory.irc_bot.channels))
 
     #def handle_CHAT(self, message):
         #message = "<%s> %s" % (self.name, message)
