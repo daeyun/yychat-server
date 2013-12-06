@@ -19,7 +19,8 @@ if __name__ == '__main__':
     ssl_helper.prepare_ssl_cert()
 
     request_handler = RequestHandlerFactory()
-    irc_bot = YYBotFactory("#yychat", "yychat")
+    channels = ["#yychat"]
+    irc_bot = YYBotFactory(channels, "yychat")
     request_handler.add_irc_bot(irc_bot)
     irc_bot.add_request_handler(request_handler)
 

@@ -20,7 +20,8 @@ class YYBot(irc.IRCClient):
 
     def signedOn(self):
         """Called when bot has succesfully signed on to server."""
-        self.join(self.factory.channel)
+        for channel in self.factory.channels:
+            self.join(channel)
         log.msg("[signedOn at %s]" % time.asctime(time.localtime(time.time())))
 
     def joined(self, channel):
@@ -114,8 +115,8 @@ class YYBotFactory(protocol.ClientFactory):
     """A new protocol instance will be created each time we connect to
     the server. """
 
-    def __init__(self, channel, nickname):
-        self.channel = channel
+    def __init__(self, channels, nickname):
+        self.channels = channels
         self.nickname = nickname
 
     def add_request_handler(self, request_handler):
