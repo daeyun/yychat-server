@@ -11,10 +11,10 @@ from server.request_handler import RequestHandlerFactory
 
 
 class TestRequestHandler(unittest.TestCase):
-    _channels = ['#test_channel']
-    _username = 'cat'
-
     def setUp(self):
+        self._channels = ['#test_channel']
+        self._username = 'cat'
+
         self.bot_factory = YYBotFactory(self._channels, self._username)
         self.request_handler_factory = RequestHandlerFactory()
 
@@ -104,3 +104,41 @@ class TestRequestHandler(unittest.TestCase):
         expected = "PRIVMSG #test_channel :supgaiz"
         actual = self.fake_bot_transport.value().strip()
         self.assertEqual(actual, expected)
+
+    def test_leave_channel(self):
+        self.assertEqual(len(self.bot_factory.channels), 1)
+
+        request = {
+            'type': 'leave_channel',
+            'channel': '#test_channel',
+        }
+        request_str = json.dumps(request)
+        self.request_handler.lineReceived(request_str)
+
+        # manually call the callback to simulate leaving a channel
+        self.bot.left('#test_channel')
+
+        # left() sends back a list of channels
+        response = {
+            'type': 'list_channels',
+            'content': []
+        }
+        expected = json.dumps(response) + '\n'
+        self.assertEqual(self.fake_receiver_transport.value(), expected)
+        self.assertEqual(len(self.bot_factory.channels), 0)
+
+    def test_leave_channel_invalid(self):
+        self.assertEqual(len(self.bot_factory.channels), 1)
+
+        # trying to leave a channel without joining it first
+        request = {
+            'type': 'leave_channel',
+            'channel': '#random_channel_42',
+        }
+        request_str = json.dumps(request)
+        self.request_handler.lineReceived(request_str)
+
+        # nothing should happen
+        expected = ''
+        self.assertEqual(self.fake_receiver_transport.value(), expected)
+        self.assertEqual(len(self.bot_factory.channels), 1)

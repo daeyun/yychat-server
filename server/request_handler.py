@@ -32,6 +32,7 @@ class RequestHandler(LineReceiver):
             'list_channels': self.handle_list_channels,
             'join_channel': self.handle_join_channel,
             'get_nickname': self.handle_get_nickname,
+            'leave_channel': self.handle_leave_channel,
         }[request_type](request)
 
     def handle_send_message(self, request):
@@ -66,6 +67,10 @@ class RequestHandler(LineReceiver):
             'content': self.factory.irc_bot.nickname,
         }
         self.sendLine(json.dumps(response))
+
+    def handle_leave_channel(self, request):
+        channel = request['channel'].encode('ascii', 'ignore')
+        self.factory.irc_bot.leave_channel(channel)
 
 
 class RequestHandlerFactory(Factory):

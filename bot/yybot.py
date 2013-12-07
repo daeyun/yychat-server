@@ -26,7 +26,7 @@ class YYBot(irc.IRCClient):
         log.msg("[signedOn at %s]" % time.asctime(time.localtime(time.time())))
 
     def joined(self, channel):
-        """This will get called when the bot joins the channel."""
+        """This will get called when the bot joins a channel."""
         log.msg("[joined %s]" % channel)
 
         if channel not in self.factory.channels:
@@ -35,6 +35,14 @@ class YYBot(irc.IRCClient):
 
         def got_names(nicklist):
             self.names("channel").addCallback()
+
+    def left(self, channel):
+        """This will get called when the bot leaves a channel."""
+        log.msg("[left %s]" % channel)
+
+        if channel in self.factory.channels:
+            self.factory.channels.remove(channel)
+            self.factory.request_handler.list_channels()
 
     def privmsg(self, hostmask, channel, msg):
         """This will get called when the bot receives a message."""
@@ -148,3 +156,8 @@ class YYBotFactory(protocol.ClientFactory):
         log.msg("Joining %s" % channel)
         if channel not in self.channels:
             self.protocol.join(channel)
+
+    def leave_channel(self, channel):
+        log.msg("Leaving %s" % channel)
+        if channel in self.channels:
+            self.protocol.leave(channel)
