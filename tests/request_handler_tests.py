@@ -70,6 +70,23 @@ class TestRequestHandler(unittest.TestCase):
         self.assertEqual(self.fake_receiver_transport.value(), expected)
         self.assertEqual(len(self.bot_factory.channels), 2)
 
+    def test_get_nickname(self):
+        self.assertEqual(len(self.bot_factory.channels), 1)
+
+        request = {
+            'type': 'get_nickname',
+        }
+        request_str = json.dumps(request)
+        self.request_handler.lineReceived(request_str)
+
+        response = {
+            'type': 'get_nickname',
+            'content': self._username,
+            'hash': md5(request_str).hexdigest(),
+        }
+        expected = json.dumps(response) + '\n'
+        self.assertEqual(self.fake_receiver_transport.value(), expected)
+
     def test_send_message(self):
         request = {
             'type': 'send_message',
