@@ -25,11 +25,13 @@ class RequestHandler(LineReceiver):
         log.msg("Client %s sent data: " % self.name, line)
 
         request = json.loads(line.strip())
-        request_type = request['type'].lower()
+        request_type = request['type'].encode('ascii', 'ignore').lower()
 
         {
             'send_message': self.handle_send_message,
-            'list_channels': self.handle_list_channels
+            'list_channels': self.handle_list_channels,
+            'join_channel': self.handle_join_channel,
+            'get_nickname': self.handle_get_nickname,
         }[request_type](request, md5(line).hexdigest())
 
     def handle_send_message(self, request, hash):
@@ -41,22 +43,30 @@ class RequestHandler(LineReceiver):
         self.factory.irc_bot.send_message(target, message)
 
         response = {
-            "hash": hash,
+            'hash': hash,
         }
         self.sendLine(json.dumps(response))
 
     def handle_list_channels(self, request, hash):
         """Respond with the list of currently joined channels."""
         response = {
-            "content": self.factory.irc_bot.channels,
-            "hash": hash,
+            'type': 'list_channels',
+            'content': self.factory.irc_bot.channels,
+            'hash': hash,
         }
         self.sendLine(json.dumps(response))
 
-    #def handle_CHAT(self, message):
-        #message = "<%s> %s" % (self.name, message)
-        #for name, protocol in self.users.iteritems():
-            #protocol.sendLine(message)
+    def handle_join_channel(self, request, hash):
+        channel = request['channel'].encode('ascii', 'ignore')
+        self.factory.irc_bot.join_channel(channel)
+
+    def handle_get_nickname(self, request, hash):
+        response = {
+            'type': 'get_nickname',
+            'content': self.factory.irc_bot.nickname,
+            'hash': hash,
+        }
+        self.sendLine(json.dumps(response))
 
 
 class RequestHandlerFactory(Factory):
@@ -73,8 +83,30 @@ class RequestHandlerFactory(Factory):
 
     def get_message(self, nick, userhost, channel, message):
         for name, protocol in self.users.iteritems():
-            protocol.sendLine("NEW_MESSAGE " + channel + " " + nick + " " + userhost + " " + message)
+            response = {
+                'type': 'new_message',
+                'channel': channel,
+                'sender_nick': nick,
+                'sender_hostmask': userhost,
+                'message': message,
+            }
+            protocol.sendLine(json.dumps(response))
+
+    def list_channels(self):
+        for name, protocol in self.users.iteritems():
+            response = {
+                'type': 'list_channels',
+                'content': self.irc_bot.channels,
+            }
+            protocol.sendLine(json.dumps(response))
 
     def notify_user_mode_change(self, sender_nick, channel, mode, nick):
         for name, protocol in self.users.iteritems():
-            protocol.sendLine("USER_MODE_CHANGE " + sender_nick + " " + channel + "" + mode + " " + nick)
+            response = {
+                'type': 'user_mode_change',
+                'channel': channel,
+                'sender_nick': sender_nick,
+                'nick': nick,
+                'mode': mode,
+            }
+            protocol.sendLine(json.dumps(response))

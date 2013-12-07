@@ -36,29 +36,29 @@ class TestRequestHandler(unittest.TestCase):
 
     def test_list_channels(self):
         request = {
-            "type": "list_channels",
+            'type': "list_channels",
         }
         request_str = json.dumps(request)
         self.request_handler.lineReceived(request_str)
 
         response = {
-            "content": self._channels,
-            "hash": md5(request_str).hexdigest(),
+            'content': self._channels,
+            'hash': md5(request_str).hexdigest(),
         }
         expected = json.dumps(response) + '\n'
         self.assertEqual(expected, self.fake_receiver_transport.value())
 
     def test_send_message(self):
         request = {
-            "type": "send_message",
-            "message": "supgaiz",
-            "target": self._channels[0],
+            'type': 'send_message',
+            'message': 'supgaiz',
+            'target': self._channels[0],
         }
         request_str = json.dumps(request)
         self.request_handler.lineReceived(request_str)
 
         response = {
-            "hash": md5(request_str).hexdigest(),
+            'hash': md5(request_str).hexdigest(),
         }
         expected = json.dumps(response)
         actual = self.fake_receiver_transport.value().strip()

@@ -28,6 +28,10 @@ class YYBot(irc.IRCClient):
         """This will get called when the bot joins the channel."""
         log.msg("[joined %s]" % channel)
 
+        if channel not in self.factory.channels:
+            self.factory.channels.append(channel)
+            self.factory.request_handler.list_channels()
+
         def got_names(nicklist):
             self.names("channel").addCallback()
 
@@ -138,3 +142,8 @@ class YYBotFactory(protocol.ClientFactory):
 
     def send_message(self, target, message):
         self.protocol.msg(target, message)
+
+    def join_channel(self, channel):
+        log.msg("Joining %s" % channel)
+        if channel not in self.channels:
+            self.protocol.join(channel)
