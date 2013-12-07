@@ -32,39 +32,38 @@ class RequestHandler(LineReceiver):
             'list_channels': self.handle_list_channels,
             'join_channel': self.handle_join_channel,
             'get_nickname': self.handle_get_nickname,
-        }[request_type](request, md5(line).hexdigest())
+        }[request_type](request)
 
-    def handle_send_message(self, request, hash):
+    def handle_send_message(self, request):
         """Send a message to the IRC server and send a confirmation message
         to the client containing the hash of the request string."""
         target = request['target'].encode('ascii', 'ignore')
         message = request['message'].encode('ascii', 'ignore')
 
         self.factory.irc_bot.send_message(target, message)
+        hash = md5(json.dumps(request)).hexdigest()
 
         response = {
             'hash': hash,
         }
         self.sendLine(json.dumps(response))
 
-    def handle_list_channels(self, request, hash):
+    def handle_list_channels(self, request):
         """Respond with the list of currently joined channels."""
         response = {
             'type': 'list_channels',
             'content': self.factory.irc_bot.channels,
-            'hash': hash,
         }
         self.sendLine(json.dumps(response))
 
-    def handle_join_channel(self, request, hash):
+    def handle_join_channel(self, request):
         channel = request['channel'].encode('ascii', 'ignore')
         self.factory.irc_bot.join_channel(channel)
 
-    def handle_get_nickname(self, request, hash):
+    def handle_get_nickname(self, request):
         response = {
             'type': 'get_nickname',
             'content': self.factory.irc_bot.nickname,
-            'hash': hash,
         }
         self.sendLine(json.dumps(response))
 

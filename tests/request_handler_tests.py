@@ -44,7 +44,6 @@ class TestRequestHandler(unittest.TestCase):
         response = {
             'type': 'list_channels',
             'content': self._channels,
-            'hash': md5(request_str).hexdigest(),
         }
         expected = json.dumps(response) + '\n'
         self.assertEqual(self.fake_receiver_transport.value(), expected)
@@ -82,7 +81,6 @@ class TestRequestHandler(unittest.TestCase):
         response = {
             'type': 'get_nickname',
             'content': self._username,
-            'hash': md5(request_str).hexdigest(),
         }
         expected = json.dumps(response) + '\n'
         self.assertEqual(self.fake_receiver_transport.value(), expected)
