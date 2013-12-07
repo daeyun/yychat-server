@@ -12,11 +12,15 @@ class YYBot(irc.IRCClient):
 
     def connectionMade(self):
         irc.IRCClient.connectionMade(self)
-        log.msg("[connected at %s]" % time.asctime(time.localtime(time.time())))
+
+        datetime = time.asctime(time.localtime(time.time()))
+        log.msg("[connected at %s]" % datetime)
 
     def connectionLost(self, reason):
         irc.IRCClient.connectionLost(self, reason)
-        log.msg("[disconnected at %s]" % time.asctime(time.localtime(time.time())))
+
+        datetime = time.asctime(time.localtime(time.time()))
+        log.msg("[disconnected at %s]" % datetime)
 
     def signedOn(self):
         """Called when bot has succesfully signed on to server."""
@@ -50,7 +54,8 @@ class YYBot(irc.IRCClient):
         userhost = hostmask.split('!', 1)[1]
         log.msg("<%s> %s" % (hostmask, msg))
 
-        self.factory.request_handler.get_message(sender_nick, userhost, channel, msg)
+        self.factory.request_handler.get_message(sender_nick, userhost,
+                                                 channel, msg)
 
         # Check to see if they're sending me a private message
         #if channel == self.nickname:

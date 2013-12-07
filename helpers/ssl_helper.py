@@ -1,6 +1,4 @@
-from OpenSSL import crypto, SSL
-from pprint import pprint
-from time import gmtime, mktime
+from OpenSSL import crypto
 from os.path import exists, join, expanduser
 from os import makedirs
 from time import time

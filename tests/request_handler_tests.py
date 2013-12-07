@@ -27,9 +27,9 @@ class TestRequestHandler(unittest.TestCase):
         self.bot.signedOn()
         self.fake_bot_transport.clear()
 
-
-        self.request_handler = self.request_handler_factory.buildProtocol(('127.0.0.1', 1))
         self.fake_receiver_transport = proto_helpers.StringTransport()
+        self.request_handler = self.request_handler_factory.\
+            buildProtocol(('127.0.0.1', 1))
 
         self.request_handler.makeConnection(self.fake_receiver_transport)
         self.fake_receiver_transport.clear()
