@@ -10,17 +10,62 @@ class TestSequenceFunctions(unittest.TestCase):
     def setUp(self):
         self.handler = SQLiteHandler('test_db.sqlite3')
 
-    def test_add_line(self):
+    def tearDown(self):
+        self.handler.remove()
+
+    def test_add_msg(self):
         cursor = self.handler.get_cursor()
 
-        self.handler.add_msg('irc.freenode.net', '#yychat', 'nickname',
-                             'hi friends')
+        self.handler.add_msg(
+            'irc.freenode.net',
+            '#test',
+            'nickname',
+            'hi friends',
+        )
 
-        cursor.execute('SELECT COUNT(*) from message;')
-        num_rows = cursor.fetchone()[0]
+        cursor.execute('SELECT COUNT(*), type from line;')
+        result = cursor.fetchone()
+        num_rows = result[0]
         self.assertEqual(num_rows, 1)
 
-        self.handler.remove()
+        line_type = result[1]
+        self.assertEqual(line_type, 0)
+
+    def test_add_action(self):
+        cursor = self.handler.get_cursor()
+
+        self.handler.add_action(
+            'irc.freenode.net',
+            '#test',
+            'nickname',
+            'says hi',
+        )
+
+        cursor.execute('SELECT COUNT(*), type from line;')
+        result = cursor.fetchone()
+        num_rows = result[0]
+        self.assertEqual(num_rows, 1)
+
+        line_type = result[1]
+        self.assertEqual(line_type, 1)
+
+    def test_add_status(self):
+        cursor = self.handler.get_cursor()
+
+        self.handler.add_status(
+            'irc.freenode.net',
+            '#test',
+            'nickname',
+            'joined #test',
+        )
+
+        cursor.execute('SELECT COUNT(*), type from line;')
+        result = cursor.fetchone()
+        num_rows = result[0]
+        self.assertEqual(num_rows, 1)
+
+        line_type = result[1]
+        self.assertEqual(line_type, 2)
 
 if __name__ == '__main__':
     unittest.main()

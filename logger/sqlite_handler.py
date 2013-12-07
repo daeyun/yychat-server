@@ -12,15 +12,17 @@ class SQLiteHandler:
             cursor = self.conn.cursor()
 
             cursor.execute('''
-                CREATE TABLE message (
+                CREATE TABLE line (
                 id INTEGER PRIMARY KEY NOT NULL,
                 date DATETIME DEFAULT current_timestamp,
+                type INTEGER,
                 nick VARCHAR(64),
-                channel VARCHAR(64),
+                target VARCHAR(64),
                 network VARCHAR(256),
                 message TEXT(512)
                 );
             ''')
+            # target is either a channel or a nickname
 
             self.conn.commit()
         else:
@@ -46,13 +48,36 @@ class SQLiteHandler:
             else:
                 return False
 
-    def add_msg(self, network, channel, nickname, message):
+    def add_msg(self, network, target, nickname, message):
+        '''Log a message. type: 0'''
         cursor = self.conn.cursor()
 
         cursor.execute('''
-            INSERT INTO message (nick, channel, network, message)
-            VALUES (?, ?, ?, ?);
-        ''', (nickname, channel, network, message))
+            INSERT INTO line (type, nick, target, network, message)
+            VALUES (0, ?, ?, ?, ?);
+        ''', (nickname, target, network, message))
+
+        self.conn.commit()
+
+    def add_action(self, network, target, nickname, message):
+        '''Log an action. type: 1'''
+        cursor = self.conn.cursor()
+
+        cursor.execute('''
+            INSERT INTO line (type, nick, target, network, message)
+            VALUES (1, ?, ?, ?, ?);
+        ''', (nickname, target, network, message))
+
+        self.conn.commit()
+
+    def add_status(self, network, target, nickname, message):
+        '''Log join, leave, name change, etc. type: 2'''
+        cursor = self.conn.cursor()
+
+        cursor.execute('''
+            INSERT INTO line (type, nick, target, network, message)
+            VALUES (2, ?, ?, ?, ?);
+        ''', (nickname, target, network, message))
 
         self.conn.commit()
 
