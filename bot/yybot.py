@@ -20,6 +20,7 @@ class YYBot(irc.IRCClient):
 
     def signedOn(self):
         """Called when bot has succesfully signed on to server."""
+
         for channel in self.factory.channels:
             self.join(channel)
         log.msg("[signedOn at %s]" % time.asctime(time.localtime(time.time())))
