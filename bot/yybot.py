@@ -191,3 +191,39 @@ class YYBotFactory(protocol.ClientFactory):
             self.nickname,
             "has left %s" % channel,
         )
+
+    def get_logs(self, network, target, limit):
+        '''retrieve logs from the database and return a list of dicts'''
+        cursor = self.db_manager.get_cursor()
+
+        cursor.execute('''
+            SELECT date, type, nick, target, network, message
+            FROM line
+            WHERE target = ? AND network = ?
+            ORDER BY date DESC
+            LIMIT ?
+            ;
+        ''', (target, network, limit))
+
+        results = cursor.fetchall()
+        logs = []
+
+        for row in results:
+            if row[1] == 0:
+                entry_type = 'msg'
+            elif row[1] == 1:
+                entry_type = 'action'
+            elif row[1] == 2:
+                entry_type = 'status'
+
+            entry = {
+                'type': entry_type,
+                'date': row[0],
+                'nick': row[2],
+                'target': row[3],
+                'network': row[4],
+                'message': row[5],
+            }
+            logs.append(entry)
+
+        return logs

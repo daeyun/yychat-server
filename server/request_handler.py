@@ -33,6 +33,7 @@ class RequestHandler(LineReceiver):
             'join_channel': self.handle_join_channel,
             'get_nickname': self.handle_get_nickname,
             'leave_channel': self.handle_leave_channel,
+            'get_logs': self.handle_get_logs,
         }[request_type](request)
 
     def handle_send_message(self, request):
@@ -71,6 +72,22 @@ class RequestHandler(LineReceiver):
     def handle_leave_channel(self, request):
         channel = request['channel'].encode('ascii', 'ignore')
         self.factory.irc_bot.leave_channel(channel)
+
+    def handle_get_logs(self, request):
+        network = request['network'].encode('ascii', 'ignore')
+        target = request['target'].encode('ascii', 'ignore')
+
+        try:
+            limit = request['limit'].encode('ascii', 'ignore')
+        except:
+            limit = 10
+
+        log = self.factory.irc_bot.get_logs(network, target, limit)
+        response = {
+            'type': 'get_logs',
+            'content': log,
+        }
+        self.sendLine(json.dumps(response))
 
 
 class RequestHandlerFactory(Factory):
