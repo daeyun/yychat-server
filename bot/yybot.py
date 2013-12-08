@@ -26,7 +26,7 @@ class YYBot(irc.IRCClient):
         """Called when bot has succesfully signed on to server."""
 
         for channel in self.factory.channels:
-            self.join(channel)
+            self.factory.join_channel(channel)
         log.msg("[signedOn at %s]" % time.asctime(time.localtime(time.time())))
 
     def joined(self, channel):
@@ -133,12 +133,16 @@ class YYBotFactory(protocol.ClientFactory):
     """A new protocol instance will be created each time we connect to
     the server. """
 
-    def __init__(self, channels, nickname):
+    def __init__(self, network, channels, nickname):
+        self.network = network
         self.channels = channels
         self.nickname = nickname
 
     def add_request_handler(self, request_handler):
         self.request_handler = request_handler
+
+    def add_db_manager(self, db_manager):
+        self.db_manager = db_manager
 
     def buildProtocol(self, addr):
         self.protocol = YYBot()
@@ -157,12 +161,33 @@ class YYBotFactory(protocol.ClientFactory):
     def send_message(self, target, message):
         self.protocol.msg(target, message)
 
+        self.db_manager.add_msg(
+            self.network,
+            target,
+            self.nickname,
+            message,
+        )
+
     def join_channel(self, channel):
         log.msg("Joining %s" % channel)
         if channel not in self.channels:
             self.protocol.join(channel)
 
+        self.db_manager.add_status(
+            self.network,
+            channel,
+            self.nickname,
+            "has joined %s" % channel,
+        )
+
     def leave_channel(self, channel):
         log.msg("Leaving %s" % channel)
         if channel in self.channels:
             self.protocol.leave(channel)
+
+        self.db_manager.add_status(
+            self.network,
+            channel,
+            self.nickname,
+            "has left %s" % channel,
+        )
